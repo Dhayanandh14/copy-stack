@@ -1,0 +1,12 @@
+# Build output
+.build/
+.swiftpm/
+ClipStack.app/
+
+# Local databases and logs (never the user's clipboard history)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+debug.log
+
+.DS_Store

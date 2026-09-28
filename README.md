@@ -118,9 +118,17 @@ Quick Look (`⌘Y`) is editable for anything that isn't an image. Type in it, th
 - **Paste** saves first if you have unsaved edits, so you never paste a stale
   version
 
+The usual editing shortcuts all work in there — `⌘C`, `⌘V`, `⌘X`, `⌘A`, `⌘Z`
+and right-click — so you can paste something in, splice two clips together, or
+fix a typo before pasting.
+
 Works the same on favorites. Edits reindex for search immediately, and the
 dedupe fingerprint is recomputed so re-copying the original text later doesn't
 merge into the edited row.
+
+> A menu-bar-only app has no main menu, and macOS dispatches those shortcuts
+> through menu key equivalents. ClipStack installs a hidden main menu carrying
+> them; without it the editor accepts typing but nothing else.
 
 ---
 

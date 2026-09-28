@@ -30,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppDelegate.shared = self
 
+        installMainMenu()
         setUpStatusItem()
         rebindHotKeys()
 
@@ -88,6 +89,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         PanelController.shared.show()
         return true
+    }
+
+    /// A menu-bar-only app has no main menu, and macOS dispatches the standard
+    /// editing shortcuts through menu key equivalents — so without this, Cmd-C,
+    /// Cmd-V, Cmd-X, Cmd-A and Cmd-Z never reach a text field at all. The menu
+    /// is never displayed; it exists purely to carry those equivalents.
+    ///
+    /// Actions are left unassigned so they travel the responder chain to
+    /// whatever text view is focused.
+    private func installMainMenu() {
+        let mainMenu = NSMenu()
+
+        // AppKit expects the first item to be the application menu.
+        let appItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "Settings\u{2026}", action: #selector(openSettings), keyEquivalent: ",").target = self
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Quit ClipStack",
+                        action: Selector(("terminate:")), keyEquivalent: "q")
+        appItem.submenu = appMenu
+        mainMenu.addItem(appItem)
+
+        let editItem = NSMenuItem()
+        let edit = NSMenu(title: "Edit")
+        edit.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = edit.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        edit.addItem(.separator())
+        edit.addItem(withTitle: "Cut", action: Selector(("cut:")), keyEquivalent: "x")
+        edit.addItem(withTitle: "Copy", action: Selector(("copy:")), keyEquivalent: "c")
+        edit.addItem(withTitle: "Paste", action: Selector(("paste:")), keyEquivalent: "v")
+        let matchStyle = edit.addItem(withTitle: "Paste and Match Style",
+                                      action: Selector(("pasteAsPlainText:")), keyEquivalent: "v")
+        matchStyle.keyEquivalentModifierMask = [.command, .option, .shift]
+        edit.addItem(withTitle: "Delete", action: Selector(("delete:")), keyEquivalent: "")
+        edit.addItem(.separator())
+        edit.addItem(withTitle: "Select All", action: Selector(("selectAll:")), keyEquivalent: "a")
+        editItem.submenu = edit
+        mainMenu.addItem(editItem)
+
+        NSApp.mainMenu = mainMenu
     }
 
     // MARK: Status item

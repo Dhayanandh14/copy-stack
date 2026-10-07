@@ -27,6 +27,20 @@ final class Store {
         return base.appendingPathComponent("history.sqlite")
     }
 
+    /// The history holds everything you have ever copied, so it is readable
+    /// only by its owner. SQLite would otherwise create it 0644, which lets any
+    /// other account on the machine read it.
+    private static func restrictPermissions(_ url: URL) {
+        let fm = FileManager.default
+        try? fm.setAttributes([.posixPermissions: 0o700],
+                              ofItemAtPath: url.deletingLastPathComponent().path)
+        for suffix in ["", "-wal", "-shm"] {
+            let path = url.path + suffix
+            guard fm.fileExists(atPath: path) else { continue }
+            try? fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path)
+        }
+    }
+
     private init() {
         let path = Store.databaseURL.path
         if sqlite3_open(path, &db) != SQLITE_OK {
@@ -54,6 +68,7 @@ final class Store {
         exec("CREATE INDEX IF NOT EXISTS idx_created ON clips(created_at DESC);")
         exec("CREATE INDEX IF NOT EXISTS idx_digest  ON clips(digest);")
         exec("CREATE INDEX IF NOT EXISTS idx_fav     ON clips(favorite, fav_order);")
+        Store.restrictPermissions(Store.databaseURL)
     }
 
     /// ALTER TABLE errors if the column is already there, so check first

@@ -40,7 +40,7 @@ struct PanelView: View {
     /// visible, or the app just looks broken.
     @ViewBuilder
     private var permissionBanner: some View {
-        if settings.pasteOnSelect && !Paster.hasAccessibility {
+        if settings.pasteOnSelect && !Paster.hasAccessibility && !Screenshots.isRendering {
             Divider()
             Button {
                 Paster.requestAccessibility()

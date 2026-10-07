@@ -1,454 +1,192 @@
-# ClipStack
-
-A clipboard history manager for macOS. Menu-bar only, unlimited history,
-everything stored locally.
-
-Built from scratch in Swift — no Xcode required, Command Line Tools are enough.
-
-<p>
-  <img src="docs/icon.png" width="128" alt="ClipStack icon">
+<p align="center">
+  <img src="docs/icon.png" width="120" alt="ClipStack">
 </p>
 
-<img src="docs/panel-dark.png" width="380" alt="ClipStack panel">
+<h1 align="center">ClipStack</h1>
 
----
+<p align="center">
+  A clipboard manager for macOS. Unlimited history, lives in the menu bar,
+  everything stays on your machine.
+</p>
 
-## Contents
-
-- [Install](#install)
-- [Using it](#using-it)
-- [Favorites](#favorites)
-- [Editing a clip](#editing-a-clip)
-- [Images](#images)
-- [Saving a clip to a file](#saving-a-clip-to-a-file)
-- [Custom icons](#custom-icons)
-- [Settings](#settings)
-- [Privacy](#privacy)
-- [Accessibility](#accessibility)
-- [Capacity](#capacity)
-- [How it works](#how-it-works)
-- [Troubleshooting](#troubleshooting)
-- [Project layout](#project-layout)
-
----
+<p align="center">
+  <img src="docs/panel-dark.png" width="360" alt="ClipStack">
+</p>
 
 ## Install
 
-Requires **macOS 13 or later**.
+Requires macOS 13 or later.
 
-### Option 1 — download the installer
+**Download** [`ClipStack.dmg`](https://github.com/Dhayanandh14/copy-stack/releases/latest),
+open it, and drag ClipStack into Applications.
 
-1. Download **`ClipStack.dmg`** from the
-   [latest release](https://github.com/Dhayanandh14/copy-stack/releases/latest)
-2. Open it and drag **ClipStack** onto the **Applications** folder
-3. **First launch only:** right-click ClipStack in Applications and choose
-   **Open**, then confirm
+The first time you launch it, **right-click the app and choose Open** instead of
+double-clicking. ClipStack is signed with a local certificate rather than a paid
+Apple Developer one, so macOS wants you to confirm once. After that it opens
+normally.
 
-That third step matters. ClipStack is signed with a local certificate rather
-than an Apple Developer one, so macOS quarantines it on download and a normal
-double-click just refuses. Right-click → Open tells macOS you trust it, once.
-
-<sub>If macOS still refuses, open System Settings → Privacy & Security, scroll
-to the message about ClipStack and click **Open Anyway**. Or clear the
-quarantine flag yourself:
-`xattr -dr com.apple.quarantine /Applications/ClipStack.app`</sub>
-
-### Option 2 — build from source
+**Or build it yourself** — Command Line Tools are enough, no Xcode:
 
 ```bash
 git clone https://github.com/Dhayanandh14/copy-stack.git
 cd copy-stack
-./tools/make-signing-cert.sh   # first time only
-./build.sh install             # builds, installs to /Applications, launches
+./tools/make-signing-cert.sh
+./build.sh install
 ```
 
-Nothing to install first — Command Line Tools are enough, no Xcode and no
-dependencies. Building locally skips the Gatekeeper prompt entirely, because the
-app is never quarantined.
+A locally built copy skips the Gatekeeper prompt entirely.
 
-`./build.sh` alone builds `./ClipStack.app` without installing it, and
-`./tools/make-dmg.sh` produces the installer.
+Then press **⌘⇧V** anywhere.
 
----
+## Screenshots
 
-Either way: press **⌘⇧V** anywhere, or click the clipboard icon in the menu bar.
+| History | Favorites |
+|---|---|
+| <img src="docs/panel-dark.png" width="300"> | <img src="docs/panel-favorites.png" width="300"> |
 
-### Why it isn't notarized
+| Light appearance | Quick Look, editable |
+|---|---|
+| <img src="docs/panel-light.png" width="300"> | <img src="docs/quicklook-text.png" width="420"> |
 
-Notarizing requires a paid Apple Developer account. ClipStack is signed with a
-self-signed certificate instead, which is enough for macOS to keep your
-Accessibility permission stable across rebuilds, but not enough to skip
-Gatekeeper on a downloaded copy. Hence the one-time right-click → Open.
+| Images | |
+|---|---|
+| <img src="docs/quicklook-image.png" width="380"> | |
 
-On first launch it offers to open the Accessibility settings. That permission is
-needed *only* so ClipStack can press ⌘V for you — everything else works without
-it. See [Accessibility](#accessibility).
+**Settings**
 
-### Why the certificate step exists
+| General | Appearance |
+|---|---|
+| <img src="docs/settings-general.png" width="340"> | <img src="docs/settings-appearance.png" width="340"> |
 
-macOS ties Accessibility permission to an app's **code signature**. An ad-hoc
-signature (`codesign --sign -`) gets a brand-new identity on every build, so
-each reinstall silently invalidates the permission you granted — the System
-Settings toggle stays switched on but no longer matches the installed app, and
-the app keeps asking for a permission you already gave.
+| Shortcuts | Privacy |
+|---|---|
+| <img src="docs/settings-shortcuts.png" width="340"> | <img src="docs/settings-privacy.png" width="340"> |
 
-Signing with a fixed local certificate makes the requirement stable:
-
-```
-ad-hoc:  cdhash H"f1b4a1f5…"                 ← different every single build
-signed:  identifier "local.clipstack.app"
-         and certificate leaf = H"8249c907…" ← fixed
-```
-
-The certificate is local only, signs nothing but this app, and is not a
-credential for any service. Remove it whenever you like:
-
-```bash
-security delete-certificate -c "ClipStack Local Signing"
-```
-
-`build.sh` warns loudly and falls back to ad-hoc if it is missing.
-
----
+| Storage | |
+|---|---|
+| <img src="docs/settings-storage.png" width="340"> | |
 
 ## Using it
 
-The panel is a single column, one clip per row. Each row shows the source app's
-icon (or a thumbnail, for images), a type line — `Text, 146 characters` — the
-content wrapped to fit, a favorite star, and the clip's age.
+One clip per row, newest first. Each row shows where it came from, what kind of
+clip it is, and how long ago you copied it.
 
-Every row is the same height, and the number of text lines shown is derived from
-that height, so text always truncates at a line boundary.
-
-It follows your system appearance, or uses a palette you choose:
-
-| Dark | Light |
+| Key | |
 |---|---|
-| <img src="docs/panel-dark.png" width="330" alt="Dark appearance"> | <img src="docs/panel-light.png" width="330" alt="Light appearance"> |
-
-**Toolbar:** **Copy** puts the clip on the clipboard and closes · **Direct
-Paste** pastes it into the app you came from · **Quick Look** opens it full
-size · **»** holds save, rename, delete, settings and clear.
-
-### Keyboard
-
-| Key | Action |
-|---|---|
-| `⌘⇧V` | Open ClipStack |
-| `↑` `↓` | Move selection |
-| `↩` | Paste selected clip |
-| `⌘↩` | Paste as plain text (strips formatting) |
-| `⌘1`…`⌘0` | Paste that numbered row |
-| `⌘F` | Toggle favorite |
-| `⌘R` | Rename — give a clip a title you can search for |
+| `⌘⇧V` | Open |
+| `↑` `↓` | Move |
+| `↩` | Paste |
+| `⌘↩` | Paste as plain text |
+| `⌘1`…`⌘0` | Paste that row |
+| `⌘F` | Favorite |
+| `⌘R` | Rename |
 | `⌘Y` | Quick Look |
-| `⌘S` | Save to file (while Quick Look is open) |
-| `⇥` | Switch History ⇄ Favorites |
-| `⌘⌫` | Delete clip |
-| `⌘,` | Settings |
+| `⇥` | History ⇄ Favorites |
+| `⌘⌫` | Delete |
 | `⎋` | Close |
 
-Right-click any row for the same actions, plus **Save…** and, on favorites,
-**Change Icon…**.
+Without opening the panel: **⌃⌘1…0** pastes a recent clip, **⌃⌥1…0** pastes a
+favorite, **⌘⇧⌥V** pastes the last one as plain text. All rebindable.
 
-### Without opening the panel
+Right-click a row for the rest — save to a file, and on favorites, change its
+icon.
 
-- **⌃⌘1…0** — paste one of the 10 most recent clips
-- **⌃⌥1…0** — paste one of your top 10 favorites
-- **⌘⇧⌥V** — paste the most recent clip as plain text
+## What it does
 
-All rebindable in Settings → Shortcuts.
+**Text, images, rich text and files.** Images get thumbnails and open full size
+in Quick Look.
 
----
+**Favorites** stick around forever and never get pruned. Give one a custom icon
+if you want to spot it instantly.
 
-## Favorites
+**Quick Look is editable.** Fix a typo or splice two clips together before
+pasting — ⌘C, ⌘V, ⌘Z all work in there.
 
-Press `⌘F` or click the star to keep a clip permanently. Favorites get their own
-tab, are never pruned by the history limit, and can carry
-[custom icons](#custom-icons).
+**Rename a clip** to something you'll actually search for later.
 
-<img src="docs/panel-favorites.png" width="380" alt="Favorites tab">
-
----
-
-## Editing a clip
-
-Quick Look (`⌘Y`) is editable for anything that isn't an image. Type in it, then:
-
-- **Save Changes** writes the edit back to the clip
-- **Paste** saves first if you have unsaved edits, so you never paste a stale
-  version
-
-<img src="docs/quicklook-text.png" width="560" alt="Editable Quick Look">
-
-The usual editing shortcuts all work in there — `⌘C`, `⌘V`, `⌘X`, `⌘A`, `⌘Z` and
-right-click — so you can paste something in, splice two clips together, or fix a
-typo before pasting.
-
-Works the same on favorites. Edits reindex for search immediately, and the
-dedupe fingerprint is recomputed so re-copying the original text later doesn't
-merge into the edited row.
-
-> A menu-bar-only app has no main menu, and macOS dispatches those shortcuts
-> through menu key equivalents. ClipStack installs a hidden main menu carrying
-> them; without it the editor accepts typing but nothing else.
-
----
-
-## Images
-
-Images are captured automatically and stored as PNG. Rows show a downsampled
-thumbnail with the pixel dimensions; Quick Look opens the image at full size,
-scaled to fit your screen.
-
-<img src="docs/quicklook-image.png" width="500" alt="Image preview">
-
-Thumbnails are cached by clip id so scrolling a long history stays smooth. There
-is a 64 MB per-image cap (Settings → Privacy) and capture can be switched off
-entirely.
-
----
-
-## Saving a clip to a file
-
-**Save…** — from Quick Look (`⌘S`), the right-click menu, or the `»` menu.
-
-Format follows the clip: images save as PNG, rich text as RTF, plain text as
-`.txt`. Names are chosen to still make sense weeks later, e.g.
-`Clipboard Image 2026-10-07 at 21.52.03.png`, or the clip's title if you renamed it.
-
----
-
-## Custom icons
-
-Right-click a favorite → **Change Icon…** to give it an icon you choose, so the
-clips you reach for most are recognisable at a glance. **Reset Icon** puts the
-source app's icon back.
-
-Any image works — PNG, JPEG, HEIC, TIFF, GIF, `.icns`. Whatever you pick is
-downsampled to the row's icon size, so a 4000px artwork and a 32px favicon both
-land looking right. The icon is stored on the clip, so it survives restarts.
-
-Favorites only: it's for the handful of clips you keep, not the whole history.
-
----
+**Search** stays instant no matter how much history you keep.
 
 ## Settings
 
-### General
+**General** — launch at login, whether pasting closes the panel, whether the
+panel stays open when you click away, and whether focus returns to the app you
+pasted into.
 
-<img src="docs/settings-general.png" width="470" alt="General settings">
+**Appearance** — font size, row height, opacity, panel size, and colors. Changes
+apply to the open panel immediately, and there's a reset button.
 
-| Setting | Default | What the default means |
-|---|---|---|
-| Launch at login | off | |
-| Paste directly into the active app | on | Off: selecting a clip only copies it, and you press ⌘V |
-| Close the panel when it loses focus | off | Panel stays up while you click into another app, so you can place the caret first, then pick a clip |
-| Close the panel after pasting | off | Paste several clips in a row without reopening |
-| Return keyboard focus after pasting | **on** | Typing after a paste goes to the app you pasted into, not the search box |
-| Move a clip to the top when you use it | off | Clips stay in the order they were copied, so the one you just used is still where you found it |
-| Check clipboard every | 0.25 s | |
+**Shortcuts** — rebind anything.
 
-Also shows whether Accessibility has been granted, with a button to fix it.
+**Privacy** — see below.
 
-### Appearance
-
-<img src="docs/settings-appearance.png" width="470" alt="Appearance settings">
-
-Font size, row height (56–150), opacity, and whether to show the `⌘N` position
-badges. **Everything here applies to the open panel immediately.**
-
-**Panel size** — width and height sliders. Dragging the panel's edge updates
-them, and size and position are both restored next time you open it. Position is
-checked against attached displays first, so a panel left on an external monitor
-doesn't reopen off-screen when you undock.
-
-**Colors** — background, text and selection, with **Reset Colors** to restore
-the stock palette. Switch custom colors off to follow the system light/dark
-appearance instead. The panel picks its control appearance from the background's
-brightness, so a light custom background keeps everything readable.
-
-### Shortcuts
-
-<img src="docs/settings-shortcuts.png" width="470" alt="Shortcut settings">
-
-Rebind the two global hotkeys, toggle the numbered quick-paste shortcuts, and
-see the full in-panel key reference. If a combination doesn't take, another app
-already owns it.
-
-### Privacy
-
-<img src="docs/settings-privacy.png" width="470" alt="Privacy settings">
-
-Password protection, image capture and its size cap, and per-app exclusions by
-bundle identifier. See [Privacy](#privacy).
-
-### Storage
-
-<img src="docs/settings-storage.png" width="470" alt="Storage settings">
-
-Type a maximum number of clips and press Return, or click **Save**. `0` means
-unlimited. A warning appears *before* saving if the number would discard clips,
-and invalid input is rejected rather than applied.
-
-Also shows the clip count, favorite count and database size, with buttons to
-reveal the database in Finder, clear history (keeping favorites) or delete
-everything.
-
----
+**Storage** — set a maximum number of clips, or leave it unlimited. Favorites are
+never pruned either way.
 
 ## Privacy
 
-- **Everything stays on this Mac.** No network code, no accounts, no telemetry,
-  no sync.
-- **Passwords are not recorded.** Copies marked `org.nspasteboard.ConcealedType`
-  — what password managers set on secrets — are skipped.
-- **Per-app exclusions.** Add bundle identifiers to never record copies from
-  those apps.
-- **Favorites are never pruned**, whatever the history limit is set to.
+Everything stays on your Mac. No network code, no accounts, no telemetry.
 
-Database: `~/Library/Application Support/ClipStack/history.sqlite`
+Passwords aren't recorded — ClipStack skips anything marked with the pasteboard
+flag password managers use. You can also exclude specific apps by bundle ID.
 
----
+History lives in `~/Library/Application Support/ClipStack/history.sqlite`.
 
 ## Accessibility
 
-Needed only so ClipStack can press ⌘V for you. Without it, selecting a clip puts
-it on the clipboard and you paste yourself — everything else works.
+Needed only so ClipStack can press ⌘V for you. Without it, picking a clip just
+puts it on the clipboard and you paste yourself.
 
-Grant it at System Settings → Privacy & Security → Accessibility. The panel
-shows an orange banner while it's missing.
-
-If this Mac is managed by an employer, MDM policy can block that toggle. Turn
-off "Paste directly into the active app" in Settings → General and the app works
-fine without the permission.
-
----
-
-## Capacity
-
-Measured, not estimated. At ~160 clips/day with a third of them screenshots:
-
-| | Clips | Disk |
-|---|---|---|
-| 1 month | 4,800 | 0.17 GB |
-| 1 year | 58,000 | 2.1 GB |
-| 2 years | 116,000 | 4.2 GB |
-
-Images dominate: text averages ~114 bytes, images ~113 KB. Turning off image
-capture, or lowering the per-image cap, cuts growth by ~99%.
-
-**There is no clip count at which typing in the search box stalls the UI.**
-
----
+Grant it in System Settings → Privacy & Security → Accessibility. If your Mac is
+managed and that's blocked, turn off "Paste directly into the active app" and
+everything else still works.
 
 ## How it works
 
-macOS has no pasteboard-change notification, so `ClipboardMonitor` polls
-`NSPasteboard.general.changeCount` every 0.25 s (configurable) and reads the
-pasteboard only when the counter moves. It's an integer compare a few times a
-second.
+macOS has no "clipboard changed" notification, so ClipStack polls
+`NSPasteboard.changeCount` a few times a second and reads the pasteboard only
+when it moves. Storage is SQLite. Global hotkeys use Carbon, which is the only
+API that gives system-wide shortcuts without needing Accessibility.
 
-Storage is SQLite in WAL mode. Global hotkeys use Carbon `RegisterEventHotKey` —
-the only API that gives system-wide shortcuts without Accessibility permission.
-Direct paste synthesises ⌘V with `CGEvent`, which is the part that does need it.
+Search runs against a trigram FTS5 index, off the main thread — so typing never
+waits on the query, however big the history gets.
 
-### Search
+Images are kept out of the list query and loaded only when something actually
+needs the bytes. Icons and thumbnails are cached. Both mattered more than
+expected.
 
-Search stays fast at any history size, via two mechanisms that are both needed:
+## Building
 
-- A **trigram FTS5 index** over text, title and app name. Trigram specifically,
-  because it is the one tokenizer that preserves substring matching — `ompose`
-  still finds `docker compose`, which a word-based index would break. At 100,000
-  clips this takes a query matching nothing from **169 ms to 7 ms**.
-- **Search runs off the main thread**, debounced 120 ms. The index alone isn't
-  enough: it is *slower* (~110 ms) when a term matches nearly every clip, because
-  it gathers all matches before sorting. Running it in the background decouples
-  typing from query cost entirely. Superseded searches are discarded.
+```
+Sources/ClipStack/     the app
+tools/                 signing certificate, icon, DMG, CLI trigger
+docs/                  screenshots, rendered from the real UI
+```
 
-Opening the panel stays synchronous — an empty query is an indexed range read,
-fast at any size, and doing it inline avoids a flash of stale rows.
+`./build.sh` builds the app, `./build.sh install` puts it in Applications, and
+`./tools/make-dmg.sh` makes the installer.
 
-The index is maintained by SQLite triggers, costs ~30% extra disk, and is built
-once on first launch (gated on `PRAGMA user_version`).
+Screenshots are generated, not captured by hand:
 
-### Performance notes
+```bash
+CLIPSTACK_DB=/tmp/preview.sqlite CLIPSTACK_RENDER_SHOTS=./docs ./.build/release/ClipStack
+```
 
-Three things mattered more than expected:
-
-- **App icons** were resolved through LaunchServices and the disk per row, per
-  render. Cached now (`IconCache`).
-- **Image bytes** were loaded by the list query, so every keystroke in the search
-  box pulled every stored screenshot into memory. The list selects
-  `LENGTH(blob)` only; bytes load on demand for thumbnails, Quick Look and paste.
-- **Two tap gestures on one row** made SwiftUI wait out the double-click interval
-  before it could resolve a single click, so every click felt ~250 ms late. One
-  gesture reading `clickCount` off the live event fixed it.
-
----
+That renders against a throwaway database of sample clips, so real history is
+never touched.
 
 ## Troubleshooting
 
-Turn on a plain-text log of every clipboard event and paste attempt:
+**It keeps asking for Accessibility.** Make sure `build.sh` isn't falling back to
+ad-hoc signing — run `./tools/make-signing-cert.sh`.
+
+**Something's not being captured.** Turn on logging and watch it:
 
 ```bash
 defaults write local.clipstack.app debugLogging -bool true
 tail -f ~/Library/Application\ Support/ClipStack/debug.log
 ```
 
-It records which types were on the pasteboard, which app the copy came from, and
-why a clip was skipped or a paste degraded. Turn it off with `-bool false`.
-
-**It keeps asking for Accessibility.** Check `build.sh` isn't printing the
-ad-hoc warning — see [the certificate step](#why-the-certificate-step-exists).
-
-**Screenshots aren't captured.** Full-screen Retina screenshots can exceed the
-per-image cap. Raise it in Settings → Privacy; the log says when one is dropped.
-
----
-
-## Project layout
-
-```
-Sources/ClipStack/
-  App.swift              menu bar, lifecycle, hotkeys, hidden main menu
-  AppModel.swift         panel view model, selection, debounced async search
-  ClipboardMonitor.swift changeCount polling + capture
-  Store.swift            SQLite; FTS5 index, blobs loaded lazily
-  Paster.swift           pasteboard writes, synthesised ⌘V, focus handback
-  ClipExporter.swift     Save… (NSSavePanel, presented as a sheet)
-  IconPicker.swift       custom icons for favorites
-  QuickLook.swift        full-size preview, editable for text
-  HotKeyCenter.swift     Carbon global hotkeys
-  IconCache.swift        app icons, resolved once per bundle id
-  ThumbnailCache.swift   downsampled thumbnails and custom icons
-  DebugLog.swift         opt-in plain-file diagnostics
-  Screenshots.swift      offscreen UI render for docs/
-  Settings.swift         UserDefaults-backed preferences
-  Models.swift           Clip
-  Views/                 panel, rows, dotted separator, settings, hotkey recorder
-tools/
-  make-signing-cert.sh   one-time local signing certificate
-  make-icon.swift        draws the app icon, exports every size
-  make-dmg.sh            builds the drag-to-Applications installer
-  make-dmg-background.swift  draws the installer window art
-  trigger.swift          open the panel or settings from the command line
-```
-
-`open -a ClipStack` also opens the panel.
-
-Regenerate every screenshot in `docs/` after a UI change:
-
-```bash
-CLIPSTACK_DB=/tmp/preview.sqlite CLIPSTACK_RENDER_SHOTS=./docs ./.build/release/ClipStack
-```
-
-`CLIPSTACK_DB` points the renderer at a throwaway database seeded with sample
-clips, so real clipboard history is never rendered or touched.
-
----
-
 ## License
 
-None yet — default copyright applies, meaning no one else may legally reuse
-this. Add a LICENSE file (MIT is the usual choice) before sharing it publicly.
+Not licensed yet, so nobody can legally reuse this. Add a LICENSE file before
+sharing it around.

@@ -6,7 +6,13 @@ import SwiftUI
 /// layout changes without having to drive the app by hand.
 /// Triggered by `CLIPSTACK_RENDER_SHOTS=<output dir>`.
 enum Screenshots {
+    /// True while rendering documentation, so transient local state — like a
+    /// missing Accessibility grant — doesn't end up in the published images.
+    static private(set) var isRendering = false
+
     static func run(outputDir: String) {
+        isRendering = true
+        defer { isRendering = false }
         let dir = URL(fileURLWithPath: outputDir)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -33,8 +39,11 @@ enum Screenshots {
         model.selection = 1
         capture(panel(), size: panelSize, appearance: dark,
                 to: dir.appendingPathComponent("panel-dark.png"))
+        let hadCustomColors = settings.useCustomColors
+        settings.useCustomColors = false
         capture(panel(), size: panelSize, appearance: light,
                 to: dir.appendingPathComponent("panel-light.png"))
+        settings.useCustomColors = hadCustomColors
 
         // Favorites
         model.mode = .favorites

@@ -104,7 +104,26 @@ pasting — ⌘C, ⌘V, ⌘Z all work in there.
 
 **Rename a clip** to something you'll actually search for later.
 
+**Hide a clip** you'd rather not have on screen — see below.
+
 **Search** stays instant no matter how much history you keep.
+
+## Hiding a clip
+
+Right-click → **Hide Contents** on anything you'd rather not have sitting on
+screen. The row masks itself, and clicking the eye brings it back.
+
+<img src="docs/panel-dark.png" width="340" alt="A hidden clip in the list">
+
+<sub>Row 4 above — the title you gave it still shows, the contents don't.</sub>
+
+A name you chose stays visible, because that's how you find the clip again. The
+mask is a fixed width and the type line just says "Hidden", so neither one gives
+away how long the content was. Hidden images don't show their thumbnail either.
+
+Pasting and Quick Look still give you the real thing — this is about shoulder
+surfing, not locking yourself out. The flag sticks to the clip, so it survives
+restarts.
 
 ## Settings
 

@@ -135,6 +135,7 @@ enum Screenshots {
             (.text, "The quarterly numbers landed 12% above forecast, driven mostly by the enterprise tier.", nil, "Mail", "com.apple.mail"),
             (.image, "Size: 397x905", nil, "Safari", "com.apple.Safari"),
             (.text, "git rebase -i HEAD~4", nil, "Terminal", "com.apple.Terminal"),
+            (.text, "staging database password", "Staging DB", "Terminal", "com.apple.Terminal"),
         ]
 
         for (index, s) in samples.enumerated() {
@@ -149,6 +150,7 @@ enum Screenshots {
                                          appBundleID: bundleID, blob: blob, digest: digest)
             if let title { Store.shared.setTitle(id: id, title) }
             if index == 3 || index == 5 { Store.shared.setFavorite(id: id, true) }
+            if text == "staging database password" { Store.shared.setSensitive(id: id, true) }
             // Newest first, spread over the last couple of days.
             Store.shared.backdate(id: id, bySeconds: sampleAges[index])
         }
@@ -156,6 +158,7 @@ enum Screenshots {
 
     private static let sampleAges: [TimeInterval] = [
         18, 95, 240, 780, 1_500, 3_400, 7_200, 14_000, 32_000, 61_000, 104_000, 180_000,
+        300,   // the hidden sample, kept near the top so it is visible
     ]
 
     /// A neutral gradient stand-in for "someone copied a screenshot".

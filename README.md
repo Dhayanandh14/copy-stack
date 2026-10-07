@@ -129,7 +129,10 @@ Everything stays on your Mac. No network code, no accounts, no telemetry.
 Passwords aren't recorded — ClipStack skips anything marked with the pasteboard
 flag password managers use. You can also exclude specific apps by bundle ID.
 
-History lives in `~/Library/Application Support/ClipStack/history.sqlite`.
+History lives in `~/Library/Application Support/ClipStack/history.sqlite`,
+readable only by you. It isn't encrypted — it's a plain SQLite file, the same as
+every other clipboard manager — so treat it like any other file holding things
+you've copied.
 
 ## Accessibility
 
@@ -186,7 +189,11 @@ defaults write local.clipstack.app debugLogging -bool true
 tail -f ~/Library/Application\ Support/ClipStack/debug.log
 ```
 
+## Contributing
+
+Issues and pull requests are welcome. The whole thing is plain Swift with no
+dependencies — `./build.sh install` and you're running your own copy.
+
 ## License
 
-Not licensed yet, so nobody can legally reuse this. Add a LICENSE file before
-sharing it around.
+[MIT](LICENSE). Do what you like with it.

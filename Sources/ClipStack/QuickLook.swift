@@ -47,11 +47,19 @@ enum QuickLook {
     }
 }
 
-private struct QuickLookView: View {
+struct QuickLookView: View {
     let clip: Clip
     @State private var loaded: NSImage?
-    @State private var draft: String = ""
+    @State private var draft: String
     @State private var savedFlash = false
+
+    init(clip: Clip) {
+        self.clip = clip
+        // Seeded here rather than in `.task`, so the first render already has
+        // the text. An async task never completes during an offscreen capture.
+        _draft = State(initialValue: clip.text)
+        _loaded = State(initialValue: clip.kind == .image ? clip.loadImage() : nil)
+    }
 
     private var isEditable: Bool { clip.kind != .image }
     private var hasEdits: Bool { isEditable && draft != clip.text }
@@ -78,7 +86,6 @@ private struct QuickLookView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .task {
                 if clip.kind == .image, loaded == nil { loaded = clip.loadImage() }
-                if draft.isEmpty { draft = clip.text }
             }
 
             Divider()
@@ -117,6 +124,7 @@ private struct QuickLookView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     /// Writes the edit back to the clip and refreshes the list behind us.

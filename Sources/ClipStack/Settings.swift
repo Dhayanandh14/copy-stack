@@ -7,18 +7,25 @@ import SwiftUI
 final class Settings: ObservableObject {
     static let shared = Settings()
 
+    /// The stock palette. Named so `init` and `resetColors()` can't drift.
+    enum DefaultColor {
+        static let background = Color(red: 37/255, green: 41/255, blue: 43/255)
+        static let text = Color(red: 228/255, green: 228/255, blue: 229/255)
+        static let accent = Color(red: 45/255, green: 111/255, blue: 212/255)
+    }
+
     private let d = UserDefaults.standard
 
     // MARK: Appearance
     @Published var fontSize: Double { didSet { d.set(fontSize, forKey: "fontSize") } }
     @Published var rowHeight: Double { didSet { d.set(rowHeight, forKey: "rowHeight") } }
-    @Published var opacity: Double { didSet { d.set(opacity, forKey: "opacity") } }
+    @Published var opacity: Double { didSet { d.set(opacity, forKey: "opacity"); PanelController.shared.applyLiveAppearance() } }
     /// Panel geometry. Written both by the Appearance sliders and by dragging
     /// the window's resize handle, so the two stay in step.
     @Published var panelWidth: Double { didSet { d.set(panelWidth, forKey: "panelWidth"); PanelController.shared.applyStoredSize() } }
     @Published var panelHeight: Double { didSet { d.set(panelHeight, forKey: "panelHeight"); PanelController.shared.applyStoredSize() } }
-    @Published var useCustomColors: Bool { didSet { d.set(useCustomColors, forKey: "useCustomColors") } }
-    @Published var bgColor: Color { didSet { d.setColor(bgColor, forKey: "bgColor") } }
+    @Published var useCustomColors: Bool { didSet { d.set(useCustomColors, forKey: "useCustomColors"); PanelController.shared.applyLiveAppearance() } }
+    @Published var bgColor: Color { didSet { d.setColor(bgColor, forKey: "bgColor"); PanelController.shared.applyLiveAppearance() } }
     @Published var textColor: Color { didSet { d.setColor(textColor, forKey: "textColor") } }
     @Published var accentColor: Color { didSet { d.setColor(accentColor, forKey: "accentColor") } }
 
@@ -94,9 +101,9 @@ final class Settings: ObservableObject {
         useCustomColors = d.bool(forKey: "useCustomColors")
         // Sampled from the look this was modelled on: a dark slate that is
         // slightly cooler than the system grey.
-        bgColor = d.color(forKey: "bgColor") ?? Color(red: 37/255, green: 41/255, blue: 43/255)
-        textColor = d.color(forKey: "textColor") ?? Color(red: 228/255, green: 228/255, blue: 229/255)
-        accentColor = d.color(forKey: "accentColor") ?? Color(red: 45/255, green: 111/255, blue: 212/255)
+        bgColor = d.color(forKey: "bgColor") ?? DefaultColor.background
+        textColor = d.color(forKey: "textColor") ?? DefaultColor.text
+        accentColor = d.color(forKey: "accentColor") ?? DefaultColor.accent
         maxHistory = d.integer(forKey: "maxHistory")
         pollInterval = d.double(forKey: "pollInterval")
         pasteOnSelect = d.bool(forKey: "pasteOnSelect")
@@ -126,6 +133,19 @@ final class Settings: ObservableObject {
         let ns = NSColor(bgColor).usingColorSpace(.sRGB) ?? .black
         let luminance = 0.299 * ns.redComponent + 0.587 * ns.greenComponent + 0.114 * ns.blueComponent
         return NSAppearance(named: luminance < 0.5 ? .darkAqua : .aqua)
+    }
+
+    /// Puts the three colour wells back to the stock palette.
+    func resetColors() {
+        bgColor = DefaultColor.background
+        textColor = DefaultColor.text
+        accentColor = DefaultColor.accent
+    }
+
+    var hasCustomisedColors: Bool {
+        NSColor(bgColor) != NSColor(DefaultColor.background)
+            || NSColor(textColor) != NSColor(DefaultColor.text)
+            || NSColor(accentColor) != NSColor(DefaultColor.accent)
     }
 
     var excludedBundleIDs: Set<String> {

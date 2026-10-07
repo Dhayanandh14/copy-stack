@@ -5,27 +5,46 @@ everything stored locally.
 
 Built from scratch in Swift — no Xcode required, Command Line Tools are enough.
 
-![ClipStack](docs/panel-dark.png)
+<img src="docs/panel-dark.png" width="380" alt="ClipStack panel">
 
-<sub>Light mode: [docs/panel-light.png](docs/panel-light.png) ·
-Settings: [docs/settings-light.png](docs/settings-light.png)</sub>
+---
+
+## Contents
+
+- [Install](#install)
+- [Using it](#using-it)
+- [Favorites](#favorites)
+- [Editing a clip](#editing-a-clip)
+- [Images](#images)
+- [Saving a clip to a file](#saving-a-clip-to-a-file)
+- [Custom icons](#custom-icons)
+- [Settings](#settings)
+- [Privacy](#privacy)
+- [Accessibility](#accessibility)
+- [Capacity](#capacity)
+- [How it works](#how-it-works)
+- [Troubleshooting](#troubleshooting)
+- [Project layout](#project-layout)
 
 ---
 
 ## Install
 
 ```bash
+git clone https://github.com/Dhayanandh14/copy-stack.git
+cd copy-stack
 ./tools/make-signing-cert.sh   # first time only
 ./build.sh install             # builds, installs to /Applications, launches
 ```
 
 Then press **⌘⇧V** anywhere, or click the clipboard icon in the menu bar.
 
+Requires macOS 13 or later. `./build.sh` alone builds `./ClipStack.app` without
+installing it.
+
 On first launch it offers to open the Accessibility settings. That permission is
 needed *only* so ClipStack can press ⌘V for you — everything else works without
 it. See [Accessibility](#accessibility).
-
-`./build.sh` alone builds `./ClipStack.app` without installing it.
 
 ### Why the certificate step exists
 
@@ -57,11 +76,17 @@ security delete-certificate -c "ClipStack Local Signing"
 ## Using it
 
 The panel is a single column, one clip per row. Each row shows the source app's
-icon (or a thumbnail, for images), a type line — `Text, 146 characters` —
-the content wrapped to fit, a favorite star, and the clip's age.
+icon (or a thumbnail, for images), a type line — `Text, 146 characters` — the
+content wrapped to fit, a favorite star, and the clip's age.
 
-Every row is the same height, and the number of text lines shown is derived
-from that height, so text always truncates at a line boundary.
+Every row is the same height, and the number of text lines shown is derived from
+that height, so text always truncates at a line boundary.
+
+It follows your system appearance, or uses a palette you choose:
+
+| Dark | Light |
+|---|---|
+| <img src="docs/panel-dark.png" width="330" alt="Dark appearance"> | <img src="docs/panel-light.png" width="330" alt="Light appearance"> |
 
 **Toolbar:** **Copy** puts the clip on the clipboard and closes · **Direct
 Paste** pastes it into the app you came from · **Quick Look** opens it full
@@ -98,15 +123,13 @@ All rebindable in Settings → Shortcuts.
 
 ---
 
-## What it captures
+## Favorites
 
-Plain text, rich text, images and file paths. Copies are deduplicated, so
-copying the same thing twice doesn't fill the list.
+Press `⌘F` or click the star to keep a clip permanently. Favorites get their own
+tab, are never pruned by the history limit, and can carry
+[custom icons](#custom-icons).
 
-**Images** are stored as PNG. Rows show a downsampled thumbnail with the pixel
-dimensions; Quick Look opens the image at full size. Thumbnails are cached by
-clip id so scrolling a long history stays smooth. There is a 64 MB per-image
-cap (Settings → Privacy) and capture can be switched off entirely.
+<img src="docs/panel-favorites.png" width="380" alt="Favorites tab">
 
 ---
 
@@ -118,9 +141,11 @@ Quick Look (`⌘Y`) is editable for anything that isn't an image. Type in it, th
 - **Paste** saves first if you have unsaved edits, so you never paste a stale
   version
 
-The usual editing shortcuts all work in there — `⌘C`, `⌘V`, `⌘X`, `⌘A`, `⌘Z`
-and right-click — so you can paste something in, splice two clips together, or
-fix a typo before pasting.
+<img src="docs/quicklook-text.png" width="560" alt="Editable Quick Look">
+
+The usual editing shortcuts all work in there — `⌘C`, `⌘V`, `⌘X`, `⌘A`, `⌘Z` and
+right-click — so you can paste something in, splice two clips together, or fix a
+typo before pasting.
 
 Works the same on favorites. Edits reindex for search immediately, and the
 dedupe fingerprint is recomputed so re-copying the original text later doesn't
@@ -132,17 +157,31 @@ merge into the edited row.
 
 ---
 
+## Images
+
+Images are captured automatically and stored as PNG. Rows show a downsampled
+thumbnail with the pixel dimensions; Quick Look opens the image at full size,
+scaled to fit your screen.
+
+<img src="docs/quicklook-image.png" width="500" alt="Image preview">
+
+Thumbnails are cached by clip id so scrolling a long history stays smooth. There
+is a 64 MB per-image cap (Settings → Privacy) and capture can be switched off
+entirely.
+
+---
+
 ## Saving a clip to a file
 
 **Save…** — from Quick Look (`⌘S`), the right-click menu, or the `»` menu.
 
 Format follows the clip: images save as PNG, rich text as RTF, plain text as
 `.txt`. Names are chosen to still make sense weeks later, e.g.
-`Clipboard Image 2026-09-25 at 21.52.03.png`, or the clip's title if you renamed it.
+`Clipboard Image 2026-10-07 at 21.52.03.png`, or the clip's title if you renamed it.
 
 ---
 
-## Custom icons for favorites
+## Custom icons
 
 Right-click a favorite → **Change Icon…** to give it an icon you choose, so the
 clips you reach for most are recognisable at a glance. **Reset Icon** puts the
@@ -160,6 +199,8 @@ Favorites only: it's for the handful of clips you keep, not the whole history.
 
 ### General
 
+<img src="docs/settings-general.png" width="470" alt="General settings">
+
 | Setting | Default | What the default means |
 |---|---|---|
 | Launch at login | off | |
@@ -174,20 +215,24 @@ Also shows whether Accessibility has been granted, with a button to fix it.
 
 ### Appearance
 
+<img src="docs/settings-appearance.png" width="470" alt="Appearance settings">
+
 Font size, row height (56–150), opacity, and whether to show the `⌘N` position
-badges.
+badges. **Everything here applies to the open panel immediately.**
 
 **Panel size** — width and height sliders. Dragging the panel's edge updates
 them, and size and position are both restored next time you open it. Position is
 checked against attached displays first, so a panel left on an external monitor
 doesn't reopen off-screen when you undock.
 
-**Colors** — background, text and selection. On by default with a dark palette.
-Switch it off to follow the system light/dark appearance instead. The panel
-picks its control appearance from the background's brightness, so a light custom
-background keeps everything readable.
+**Colors** — background, text and selection, with **Reset Colors** to restore
+the stock palette. Switch custom colors off to follow the system light/dark
+appearance instead. The panel picks its control appearance from the background's
+brightness, so a light custom background keeps everything readable.
 
 ### Shortcuts
+
+<img src="docs/settings-shortcuts.png" width="470" alt="Shortcut settings">
 
 Rebind the two global hotkeys, toggle the numbered quick-paste shortcuts, and
 see the full in-panel key reference. If a combination doesn't take, another app
@@ -195,9 +240,14 @@ already owns it.
 
 ### Privacy
 
-See [Privacy](#privacy) below.
+<img src="docs/settings-privacy.png" width="470" alt="Privacy settings">
+
+Password protection, image capture and its size cap, and per-app exclusions by
+bundle identifier. See [Privacy](#privacy).
 
 ### Storage
+
+<img src="docs/settings-storage.png" width="470" alt="Storage settings">
 
 Type a maximum number of clips and press Return, or click **Save**. `0` means
 unlimited. A warning appears *before* saving if the number would discard clips,
@@ -211,12 +261,12 @@ everything.
 
 ## Privacy
 
-- **Everything stays on this Mac.** No network code, no accounts, no sync.
+- **Everything stays on this Mac.** No network code, no accounts, no telemetry,
+  no sync.
 - **Passwords are not recorded.** Copies marked `org.nspasteboard.ConcealedType`
-  — what password managers set on secrets — are skipped. Toggle in
-  Settings → Privacy.
-- **Per-app exclusions.** Add bundle identifiers in Settings → Privacy to never
-  record copies from those apps.
+  — what password managers set on secrets — are skipped.
+- **Per-app exclusions.** Add bundle identifiers to never record copies from
+  those apps.
 - **Favorites are never pruned**, whatever the history limit is set to.
 
 Database: `~/Library/Application Support/ClipStack/history.sqlite`
@@ -250,8 +300,7 @@ Measured, not estimated. At ~160 clips/day with a third of them screenshots:
 Images dominate: text averages ~114 bytes, images ~113 KB. Turning off image
 capture, or lowering the per-image cap, cuts growth by ~99%.
 
-**There is no clip count at which typing in the search box stalls the UI.** See
-[Search](#search).
+**There is no clip count at which typing in the search box stalls the UI.**
 
 ---
 
@@ -262,10 +311,9 @@ macOS has no pasteboard-change notification, so `ClipboardMonitor` polls
 pasteboard only when the counter moves. It's an integer compare a few times a
 second.
 
-Storage is SQLite in WAL mode. Global hotkeys use Carbon
-`RegisterEventHotKey` — the only API that gives system-wide shortcuts without
-Accessibility permission. Direct paste synthesises ⌘V with `CGEvent`, which is
-the part that does need it.
+Storage is SQLite in WAL mode. Global hotkeys use Carbon `RegisterEventHotKey` —
+the only API that gives system-wide shortcuts without Accessibility permission.
+Direct paste synthesises ⌘V with `CGEvent`, which is the part that does need it.
 
 ### Search
 
@@ -276,9 +324,9 @@ Search stays fast at any history size, via two mechanisms that are both needed:
   still finds `docker compose`, which a word-based index would break. At 100,000
   clips this takes a query matching nothing from **169 ms to 7 ms**.
 - **Search runs off the main thread**, debounced 120 ms. The index alone isn't
-  enough: it is *slower* (~110 ms) when a term matches nearly every clip,
-  because it gathers all matches before sorting. Running it in the background
-  decouples typing from query cost entirely. Superseded searches are discarded.
+  enough: it is *slower* (~110 ms) when a term matches nearly every clip, because
+  it gathers all matches before sorting. Running it in the background decouples
+  typing from query cost entirely. Superseded searches are discarded.
 
 Opening the panel stays synchronous — an empty query is an indexed range read,
 fast at any size, and doing it inline avoids a flash of stale rows.
@@ -325,7 +373,7 @@ per-image cap. Raise it in Settings → Privacy; the log says when one is droppe
 
 ```
 Sources/ClipStack/
-  App.swift              menu bar, lifecycle, hotkey binding, remote triggers
+  App.swift              menu bar, lifecycle, hotkeys, hidden main menu
   AppModel.swift         panel view model, selection, debounced async search
   ClipboardMonitor.swift changeCount polling + capture
   Store.swift            SQLite; FTS5 index, blobs loaded lazily
@@ -348,18 +396,18 @@ tools/
 
 `open -a ClipStack` also opens the panel.
 
-Regenerate the screenshots in `docs/` after a UI change:
+Regenerate every screenshot in `docs/` after a UI change:
 
 ```bash
 CLIPSTACK_DB=/tmp/preview.sqlite CLIPSTACK_RENDER_SHOTS=./docs ./.build/release/ClipStack
 ```
 
-`CLIPSTACK_DB` points the renderer at a throwaway database, so real clipboard
-history is never rendered or touched.
+`CLIPSTACK_DB` points the renderer at a throwaway database seeded with sample
+clips, so real clipboard history is never rendered or touched.
 
 ---
 
 ## License
 
-None yet — default copyright applies, meaning no one else may reuse this. Add a
-LICENSE file if you want to change that.
+None yet — default copyright applies, meaning no one else may legally reuse
+this. Add a LICENSE file (MIT is the usual choice) before sharing it publicly.

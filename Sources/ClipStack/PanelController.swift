@@ -133,6 +133,16 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     private var isApplyingStoredSize = false
 
+    /// Opacity and window appearance live on the NSPanel, not in SwiftUI, so
+    /// they need pushing across whenever the relevant settings change —
+    /// otherwise an open panel keeps its old look until it is reopened.
+    func applyLiveAppearance() {
+        guard let panel else { return }
+        panel.alphaValue = CGFloat(Settings.shared.opacity)
+        panel.appearance = Settings.shared.panelAppearance
+        panel.invalidateShadow()
+    }
+
     /// Called when the Appearance sliders change the stored size.
     func applyStoredSize() {
         guard let panel, panel.isVisible else { return }

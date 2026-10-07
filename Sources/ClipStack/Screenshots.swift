@@ -11,22 +11,65 @@ enum Screenshots {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         seedSampleData()
-        AppModel.shared.reload()
-        AppModel.shared.selection = 1
+        let model = AppModel.shared
+        let settings = Settings.shared
 
-        for (name, appearance) in [("light", NSAppearance(named: .aqua)),
-                                   ("dark", NSAppearance(named: .darkAqua))] {
-            let panel = PanelView()
-                .environmentObject(AppModel.shared)
-                .environmentObject(Settings.shared)
-            capture(AnyView(panel), size: NSSize(width: 400, height: 720),
-                    appearance: appearance, to: dir.appendingPathComponent("panel-\(name).png"))
+        func panel() -> AnyView {
+            AnyView(PanelView().environmentObject(model).environmentObject(settings))
+        }
+        func tab<V: View>(_ view: V, _ height: CGFloat) -> AnyView {
+            AnyView(view.environmentObject(settings)
+                .frame(width: 500, height: height)
+                .padding(14))
         }
 
-        let settings = SettingsView().environmentObject(Settings.shared)
-        capture(AnyView(settings), size: NSSize(width: 516, height: 436),
-                appearance: NSAppearance(named: .aqua),
-                to: dir.appendingPathComponent("settings-light.png"))
+        let panelSize = NSSize(width: 400, height: 720)
+        let dark = NSAppearance(named: .darkAqua)
+        let light = NSAppearance(named: .aqua)
+
+        // History, both appearances
+        model.mode = .history
+        model.reload()
+        model.selection = 1
+        capture(panel(), size: panelSize, appearance: dark,
+                to: dir.appendingPathComponent("panel-dark.png"))
+        capture(panel(), size: panelSize, appearance: light,
+                to: dir.appendingPathComponent("panel-light.png"))
+
+        // Favorites
+        model.mode = .favorites
+        model.reload()
+        model.selection = 0
+        capture(panel(), size: panelSize, appearance: dark,
+                to: dir.appendingPathComponent("panel-favorites.png"))
+        model.mode = .history
+        model.reload()
+
+        // Quick Look, text (editable) and image
+        let clips = Store.shared.fetch(query: "", favoritesOnly: false, limit: 100)
+        if let text = clips.first(where: { $0.kind == .text && $0.text.count > 80 }) {
+            capture(AnyView(QuickLookView(clip: text)), size: NSSize(width: 640, height: 420),
+                    appearance: dark, to: dir.appendingPathComponent("quicklook-text.png"))
+        }
+        if let image = clips.first(where: { $0.kind == .image }) {
+            capture(AnyView(QuickLookView(clip: image)), size: NSSize(width: 560, height: 420),
+                    appearance: dark, to: dir.appendingPathComponent("quicklook-image.png"))
+        }
+
+        // Every settings tab, rendered directly — a TabView's tab strip does
+        // not draw in an offscreen capture.
+        // Each tab is captured at the height its own content needs, so nothing
+        // is clipped at the bottom.
+        for (name, view, height) in [
+            ("general",    tab(GeneralTab(), 470),    470.0),
+            ("appearance", tab(AppearanceTab(), 650), 650.0),
+            ("shortcuts",  tab(ShortcutsTab(), 640),  640.0),
+            ("privacy",    tab(PrivacyTab(), 540),    540.0),
+            ("storage",    tab(StorageTab(), 500),    500.0),
+        ] as [(String, AnyView, CGFloat)] {
+            capture(view, size: NSSize(width: 528, height: height + 28), appearance: dark,
+                    to: dir.appendingPathComponent("settings-\(name).png"))
+        }
 
         print("rendered to \(dir.path)")
     }

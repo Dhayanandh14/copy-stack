@@ -17,7 +17,7 @@ struct SettingsView: View {
 
 // MARK: - General
 
-private struct GeneralTab: View {
+struct GeneralTab: View {
     @EnvironmentObject var settings: Settings
     @State private var trusted = Paster.hasAccessibility
 
@@ -88,7 +88,7 @@ private struct GeneralTab: View {
 
 // MARK: - Appearance
 
-private struct AppearanceTab: View {
+struct AppearanceTab: View {
     @EnvironmentObject var settings: Settings
 
     var body: some View {
@@ -135,10 +135,16 @@ private struct AppearanceTab: View {
                 }
                 .disabled(!settings.useCustomColors)
                 .opacity(settings.useCustomColors ? 1 : 0.45)
+
+                HStack {
+                    Spacer()
+                    Button("Reset Colors") { settings.resetColors() }
+                        .disabled(!settings.hasCustomisedColors)
+                }
             } header: {
                 Text("Colors")
             } footer: {
-                Text("Off by default, so the panel follows your system light/dark appearance.")
+                Text("Changes apply to the open panel immediately. Reset Colors restores the stock palette; it is greyed out when nothing has been changed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -168,7 +174,7 @@ private struct AppearanceTab: View {
 
 // MARK: - Shortcuts
 
-private struct ShortcutsTab: View {
+struct ShortcutsTab: View {
     @EnvironmentObject var settings: Settings
 
     var body: some View {
@@ -231,7 +237,7 @@ private struct ShortcutsTab: View {
 
 // MARK: - Privacy
 
-private struct PrivacyTab: View {
+struct PrivacyTab: View {
     @EnvironmentObject var settings: Settings
 
     var body: some View {
@@ -275,7 +281,7 @@ private struct PrivacyTab: View {
 
 // MARK: - Storage
 
-private struct StorageTab: View {
+struct StorageTab: View {
     @EnvironmentObject var settings: Settings
     @State private var stats: (total: Int, favorites: Int, bytes: Int64) = (0, 0, 0)
     @State private var limitText = ""

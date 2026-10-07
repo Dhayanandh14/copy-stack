@@ -149,6 +149,11 @@ final class AppModel: ObservableObject {
         reload()
     }
 
+    func toggleSensitive(_ clip: Clip) {
+        Store.shared.setSensitive(id: clip.id, !clip.sensitive)
+        reload()
+    }
+
     func delete(_ clip: Clip) {
         Store.shared.delete(id: clip.id)
         let old = selection

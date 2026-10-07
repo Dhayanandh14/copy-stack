@@ -269,6 +269,9 @@ struct PanelView: View {
                 }
             }
         }
+        Button(clip.sensitive ? "Show Contents" : "Hide Contents") {
+            model.toggleSensitive(clip)
+        }
         Button("Rename…") { model.renamingID = clip.id }
         Divider()
         Button("Delete", role: .destructive) { model.delete(clip) }

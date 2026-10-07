@@ -63,7 +63,8 @@ final class Store {
             digest      TEXT    NOT NULL
         );
         """)
-        migrateAddingCustomIcon()
+        addColumnIfMissing("custom_icon", "BLOB")
+        addColumnIfMissing("sensitive", "INTEGER NOT NULL DEFAULT 0")
         migrateAddingSearchIndex()
         exec("CREATE INDEX IF NOT EXISTS idx_created ON clips(created_at DESC);")
         exec("CREATE INDEX IF NOT EXISTS idx_digest  ON clips(digest);")
@@ -73,13 +74,13 @@ final class Store {
 
     /// ALTER TABLE errors if the column is already there, so check first
     /// rather than relying on a failed statement.
-    private func migrateAddingCustomIcon() {
+    private func addColumnIfMissing(_ column: String, _ definition: String) {
         var present = false
         var stmt: OpaquePointer?
         if sqlite3_prepare_v2(db, "PRAGMA table_info(clips);", -1, &stmt, nil) == SQLITE_OK {
             while sqlite3_step(stmt) == SQLITE_ROW {
                 if let name = sqlite3_column_text(stmt, 1),
-                   String(cString: name) == "custom_icon" {
+                   String(cString: name) == column {
                     present = true
                     break
                 }
@@ -87,7 +88,7 @@ final class Store {
         }
         sqlite3_finalize(stmt)
         if !present {
-            exec("ALTER TABLE clips ADD COLUMN custom_icon BLOB;")
+            exec("ALTER TABLE clips ADD COLUMN \(column) \(definition);")
         }
     }
 
@@ -253,6 +254,13 @@ final class Store {
         }
     }
 
+    func setSensitive(id: Int64, _ sensitive: Bool) {
+        run("UPDATE clips SET sensitive = ? WHERE id = ?;") { stmt in
+            sqlite3_bind_int(stmt, 1, sensitive ? 1 : 0)
+            sqlite3_bind_int64(stmt, 2, id)
+        }
+    }
+
     func setCustomIcon(id: Int64, _ png: Data?) {
         run("UPDATE clips SET custom_icon = ? WHERE id = ?;") { stmt in
             if let png, !png.isEmpty {
@@ -337,7 +345,7 @@ final class Store {
     private static let columns = """
     c.id, c.kind, c.text, c.title, c.app_name, c.app_bundle, \
     COALESCE(LENGTH(c.blob),0), c.created_at, c.favorite, c.fav_order, c.digest, \
-    COALESCE(LENGTH(c.custom_icon),0)
+    COALESCE(LENGTH(c.custom_icon),0), c.sensitive
     """
 
     /// `query` empty returns everything, newest first. Favorites-only flips to
@@ -445,7 +453,8 @@ final class Store {
             favorite: sqlite3_column_int(stmt, 8) == 1,
             favoriteOrder: Int(sqlite3_column_int(stmt, 9)),
             digest: str(10) ?? "",
-            customIconSize: Int(sqlite3_column_int(stmt, 11))
+            customIconSize: Int(sqlite3_column_int(stmt, 11)),
+            sensitive: sqlite3_column_int(stmt, 12) == 1
         )
     }
 }

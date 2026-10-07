@@ -135,6 +135,12 @@ struct ClipRowView: View {
                         )
                 )
                 .shadow(color: .black.opacity(0.38), radius: 2.5, x: 0, y: 1.5)
+        } else if clip.kind == .image, clip.sensitive {
+            // The thumbnail is the content. Hiding the text but leaving the
+            // picture would defeat the point.
+            Image(systemName: "eye.slash")
+                .font(.system(size: 22))
+                .foregroundStyle(muted)
         } else if clip.kind == .image, let thumb = ThumbnailCache.shared.thumbnail(for: clip) {
             // Shown bare and aspect-correct: a wide banner stays wide, a tall
             // screenshot stays tall. A tile behind it just reads as chrome.
@@ -170,6 +176,16 @@ struct ClipRowView: View {
                 .foregroundStyle(muted)
                 .lineLimit(1)
             Spacer(minLength: 0)
+            if clip.sensitive {
+                Button { model.toggleSensitive(clip) } label: {
+                    Image(systemName: "eye.slash.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(muted)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Show contents")
+            }
             Button {
                 model.toggleFavorite(clip)
             } label: {

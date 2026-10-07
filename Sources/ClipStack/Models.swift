@@ -35,9 +35,12 @@ struct Clip: Identifiable, Hashable {
     var digest: String
     /// Size of a user-chosen icon for this clip, 0 when there isn't one.
     var customIconSize: Int
+    /// Hides this clip's contents in the list until it is unmarked.
+    var sensitive: Bool
 
     /// Grey header line above each row's content, e.g. "Text, 146 characters".
     var metaLine: String {
+        if sensitive { return "Hidden" }
         switch kind {
         case .text:    return "Text, \(text.count) character\(text.count == 1 ? "" : "s")"
         case .rtf:     return "Rich Text, \(text.count) character\(text.count == 1 ? "" : "s")"
@@ -48,15 +51,22 @@ struct Clip: Identifiable, Hashable {
         }
     }
 
+    /// A fixed-width mask, so it doesn't leak how long the content is.
+    private static let mask = String(repeating: "\u{2022}", count: 10)
+
     /// The wrapped body text of a row. Images carry their dimensions here.
+    /// A title you chose stays visible even when the clip is hidden — that's
+    /// the label you find it by; it's the contents that are secret.
     var bodyText: String {
         if let title, !title.isEmpty { return title }
+        if sensitive { return Clip.mask }
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Shown small beneath the title, when the user has renamed the clip.
     var subtitleText: String? {
         guard let title, !title.isEmpty else { return nil }
+        if sensitive { return Clip.mask }
         return text.replacingOccurrences(of: "\n", with: " ")
     }
 

@@ -114,10 +114,27 @@ struct ClipRowView: View {
     @ViewBuilder
     private var leading: some View {
         if let chosen = ThumbnailCache.shared.customIcon(for: clip) {
+            // App icons arrive from macOS with depth already in the artwork —
+            // a rounded squircle, a lit top edge, a shadow underneath. A flat
+            // PNG next to them reads as pasted on, so the same treatment is
+            // applied here: clip to the squircle, catch a highlight along the
+            // edge, and float it off the background.
             Image(nsImage: chosen)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.28), Color.white.opacity(0.04)],
+                                startPoint: .top, endPoint: .bottom
+                            ),
+                            lineWidth: 0.75
+                        )
+                )
+                .shadow(color: .black.opacity(0.38), radius: 2.5, x: 0, y: 1.5)
         } else if clip.kind == .image, let thumb = ThumbnailCache.shared.thumbnail(for: clip) {
             // Shown bare and aspect-correct: a wide banner stays wide, a tall
             // screenshot stays tall. A tile behind it just reads as chrome.

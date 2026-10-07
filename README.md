@@ -5,6 +5,10 @@ everything stored locally.
 
 Built from scratch in Swift — no Xcode required, Command Line Tools are enough.
 
+<p>
+  <img src="docs/icon.png" width="128" alt="ClipStack icon">
+</p>
+
 <img src="docs/panel-dark.png" width="380" alt="ClipStack panel">
 
 ---
@@ -30,6 +34,27 @@ Built from scratch in Swift — no Xcode required, Command Line Tools are enough
 
 ## Install
 
+Requires **macOS 13 or later**.
+
+### Option 1 — download the installer
+
+1. Download **`ClipStack.dmg`** from the
+   [latest release](https://github.com/Dhayanandh14/copy-stack/releases/latest)
+2. Open it and drag **ClipStack** onto the **Applications** folder
+3. **First launch only:** right-click ClipStack in Applications and choose
+   **Open**, then confirm
+
+That third step matters. ClipStack is signed with a local certificate rather
+than an Apple Developer one, so macOS quarantines it on download and a normal
+double-click just refuses. Right-click → Open tells macOS you trust it, once.
+
+<sub>If macOS still refuses, open System Settings → Privacy & Security, scroll
+to the message about ClipStack and click **Open Anyway**. Or clear the
+quarantine flag yourself:
+`xattr -dr com.apple.quarantine /Applications/ClipStack.app`</sub>
+
+### Option 2 — build from source
+
 ```bash
 git clone https://github.com/Dhayanandh14/copy-stack.git
 cd copy-stack
@@ -37,10 +62,23 @@ cd copy-stack
 ./build.sh install             # builds, installs to /Applications, launches
 ```
 
-Then press **⌘⇧V** anywhere, or click the clipboard icon in the menu bar.
+Nothing to install first — Command Line Tools are enough, no Xcode and no
+dependencies. Building locally skips the Gatekeeper prompt entirely, because the
+app is never quarantined.
 
-Requires macOS 13 or later. `./build.sh` alone builds `./ClipStack.app` without
-installing it.
+`./build.sh` alone builds `./ClipStack.app` without installing it, and
+`./tools/make-dmg.sh` produces the installer.
+
+---
+
+Either way: press **⌘⇧V** anywhere, or click the clipboard icon in the menu bar.
+
+### Why it isn't notarized
+
+Notarizing requires a paid Apple Developer account. ClipStack is signed with a
+self-signed certificate instead, which is enough for macOS to keep your
+Accessibility permission stable across rebuilds, but not enough to skip
+Gatekeeper on a downloaded copy. Hence the one-time right-click → Open.
 
 On first launch it offers to open the Accessibility settings. That permission is
 needed *only* so ClipStack can press ⌘V for you — everything else works without
@@ -391,6 +429,9 @@ Sources/ClipStack/
   Views/                 panel, rows, dotted separator, settings, hotkey recorder
 tools/
   make-signing-cert.sh   one-time local signing certificate
+  make-icon.swift        draws the app icon, exports every size
+  make-dmg.sh            builds the drag-to-Applications installer
+  make-dmg-background.swift  draws the installer window art
   trigger.swift          open the panel or settings from the command line
 ```
 

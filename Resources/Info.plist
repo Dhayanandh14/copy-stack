@@ -8,6 +8,8 @@
     <string>ClipStack</string>
     <key>CFBundleExecutable</key>
     <string>ClipStack</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>local.clipstack.app</string>
     <key>CFBundlePackageType</key>

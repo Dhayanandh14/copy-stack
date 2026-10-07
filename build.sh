@@ -17,6 +17,18 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/ClipStack"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
+# App icon. Regenerate from source if it is missing, so a fresh clone still
+# builds a bundle that looks finished.
+if [[ ! -f Resources/AppIcon.icns ]]; then
+    echo "==> Generating app icon…"
+    ICONWORK="$(mktemp -d)"
+    swiftc -O tools/make-icon.swift -o "$ICONWORK/make-icon"
+    "$ICONWORK/make-icon" "$ICONWORK/AppIcon.iconset"
+    iconutil -c icns "$ICONWORK/AppIcon.iconset" -o Resources/AppIcon.icns
+    rm -rf "$ICONWORK"
+fi
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+
 # A stable signing identity matters more than it sounds: macOS ties the
 # Accessibility grant to the code signature. Ad-hoc signatures change on every
 # build, so each reinstall silently revoked the permission. Signing with a
